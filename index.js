@@ -34,9 +34,70 @@ function Host(opts) {
       self.checkout(push, function(err, commit) {
         if (err) return console.error(err)
         console.log('checked out', commit)
+        self.prepare(commit.dir, function(err) {
+          if (err) return console.error('prepare err', err)
+          self.deploy(self.name(commit.repo), commit.dir, function(err) {
+            console.log('deploy err', err)
+          })
+        })
       })
     })
   })
+}
+
+Host.prototype.prepare = function(dir, cb) {
+  runCommand(['npm', 'install'], { cwd : dir }, cb) 
+}
+
+Host.prototype.deploy = function(name, dir, cb) {
+  var self = this
+  var confPath = this.opts.dir + '/mongroup.conf'
+  
+  fs.readFile(confPath, 'utf8', function(err, conf) {
+    if (err) {
+      conf = {
+        processes: {},
+        logs: self.opts.dir + '/logs',
+        pids: self.opts.dir + '/pids'
+      }
+    } else {
+      conf = mongroup.parseConfig(conf)
+    }
+    
+    if (!conf.processes[name])
+      conf.processes[name] = 'cd ' + dir + ' && npm start'
+    
+    var confString = self.serializeConf(conf)
+    
+    fs.writeFile(confPath, confString, function(err) {
+      if (err) return cb(err)
+      var group = new mongroup(conf)
+      
+      var procs = [name]
+      
+      group.stop(procs, 'SIGQUIT', function(err) {
+        if (err) return cb(err)
+        group.start(procs, function(err) {
+          if (err) return cb(err)
+        })
+      })
+      
+    })
+    
+  })
+  
+}
+
+Host.prototype.serializeConf = function(conf) {
+  var str = ''
+  Object.keys(conf.processes).map(function(name) {
+    str += name + ' = ' + conf.processes[name] + '\n'
+  })
+  Object.keys(conf).map(function(name) {
+    if (name === 'processes') return
+    str += name + ' = ' + conf[name] + '\n'
+  })
+  return str
 }
 
 Host.prototype.checkoutDir = function(repo) {
