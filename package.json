@@ -1,16 +1,25 @@
 {
-  "name": "nhost",
-  "version": "0.0.0",
-  "description": "",
+  "name": "taco",
+  "version": "1.0.0",
+  "description": "work in progress deployment thingy",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node test.js"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "max ogden",
+  "license": "BSD",
   "dependencies": {
     "nginx-vhosts": "~0.0.1",
     "cicada": "~1.1.1",
     "mongroup": "~1.2.0"
-  }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maxogden/taco.git"
+  },
+  "bugs": {
+    "url": "https://github.com/maxogden/taco/issues"
+  },
+  "homepage": "https://github.com/maxogden/taco"
 }
