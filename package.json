@@ -1,0 +1,16 @@
+{
+  "name": "nhost",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "nginx-vhosts": "~0.0.1",
+    "cicada": "~1.1.1",
+    "mongroup": "~1.2.0"
+  }
+}
