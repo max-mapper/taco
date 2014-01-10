@@ -11,7 +11,9 @@
   "dependencies": {
     "nginx-vhosts": "~0.0.1",
     "cicada": "~1.1.1",
-    "mongroup": "~1.2.0"
+    "mongroup": "~1.2.0",
+    "git-side-band-message": "0.0.1",
+    "stdout": "0.0.2"
   },
   "devDependencies": {},
   "repository": {

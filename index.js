@@ -1,12 +1,16 @@
-var vhosts = require('nginx-vhosts')
-var mongroup = require('mongroup')
-var http = require('http')
 var os = require('os')
 var fs = require('fs')
+var http = require('http')
 var path = require('path')
+var spawn = require('child_process').spawn
+
+var stdout = require('stdout')
+var through = require('through')
+var vhosts = require('nginx-vhosts')
+var mongroup = require('mongroup')
+var sidebandEncode = require('git-side-band-message')
 var cicada = require('cicada')
 var wrapCommit = require('cicada/lib/commit')
-var runCommand = require('cicada/lib/command')
 
 module.exports = Host
 
@@ -29,15 +33,26 @@ function Host(opts) {
   this.ci = cicada(ciOpts)
   this.server = http.createServer(this.ci.handle)
   this.ci.on('push', function (push) {
+    var response, done
     push.accept()
-    push.on('exit', function() {
+    push.on('response', function(res, cb) {
+      response = res
+      done = cb
+    })
+    push.on('service-end', function() {
+      var respLog = through(function(ch) {
+        response.write(sidebandEncode(ch.toString()))
+      }, null, { end: false })
+      respLog.pipe(stdout())
       self.checkout(push, function(err, commit) {
-        if (err) return console.error(err)
-        console.log('checked out', commit)
-        self.prepare(commit.dir, function(err) {
-          if (err) return console.error('prepare err', err)
+        if (err) return respLog.write('checkout error ' + err.message)
+        respLog.write('checked out ' + commit.repo)
+        self.prepare(commit.dir, respLog, function(err) {
+          if (err) return respLog.write('prepare err ' + err.message)
           self.deploy(self.name(commit.repo), commit.dir, function(err) {
-            console.log('deploy err', err)
+            respLog.write('deployed! err: ' + err)
+            respLog.end()
+            done()
           })
         })
       })
@@ -45,8 +60,15 @@ function Host(opts) {
   })
 }
 
-Host.prototype.prepare = function(dir, cb) {
-  runCommand(['npm', 'install'], { cwd : dir }, cb) 
+Host.prototype.prepare = function(dir, res, cb) {
+  var npmi = spawn('npm', ['install'], { cwd : dir }) 
+  npmi.stdout.pipe(res)
+  npmi.stderr.pipe(res)
+  npmi.on('exit', function (c) {
+    if (c !== 0) return cb({error: true, code: c})
+    cb(null, {code: c})
+  })
+  npmi.on('error', cb)
 }
 
 Host.prototype.deploy = function(name, dir, cb) {
@@ -79,6 +101,7 @@ Host.prototype.deploy = function(name, dir, cb) {
         if (err) return cb(err)
         group.start(procs, function(err) {
           if (err) return cb(err)
+          cb()
         })
       })
       
