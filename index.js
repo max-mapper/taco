@@ -9,6 +9,7 @@ var through = require('through')
 var vhosts = require('nginx-vhosts')
 var mongroup = require('mongroup')
 var sidebandEncode = require('git-side-band-message')
+var mkdirp = require('mkdirp')
 var cicada = require('cicada')
 var wrapCommit = require('cicada/lib/commit')
 
@@ -40,17 +41,23 @@ function Host(opts) {
       done = cb
     })
     push.on('service-end', function() {
+      var tmpStr = ''
       var respLog = through(function(ch) {
-        response.write(sidebandEncode(ch.toString()))
+        var str = ch.toString()
+        tmpStr += str
+        if (str.indexOf('\n') === -1) return
+        tmpStr = tmpStr.slice(0, tmpStr.length - 1)
+        response.write(sidebandEncode(tmpStr))
+        tmpStr = ''
       }, null, { end: false })
-      respLog.pipe(stdout())
+      // respLog.pipe(stdout())
       self.checkout(push, function(err, commit) {
-        if (err) return respLog.write('checkout error ' + err.message)
-        respLog.write('checked out ' + commit.repo)
+        if (err) return respLog.write('checkout error ' + err.message + '\n')
+        respLog.write('checked out ' + commit.repo + '\n')
         self.prepare(commit.dir, respLog, function(err) {
-          if (err) return respLog.write('prepare err ' + err.message)
+          if (err) return respLog.write('prepare err ' + err.message + '\n')
           self.deploy(self.name(commit.repo), commit.dir, function(err) {
-            respLog.write('deployed! err: ' + err)
+            respLog.write('deployed! err: ' + err + '\n')
             respLog.end()
             done()
           })
@@ -93,10 +100,22 @@ Host.prototype.deploy = function(name, dir, cb) {
     
     fs.writeFile(confPath, confString, function(err) {
       if (err) return cb(err)
+      
+      mkdirp(conf.logs, function(err) {
+        if (err) return cb(err)
+        mkdirp(conf.pids, function(err) {
+          if (err) return cb(err)
+          initGroup()
+        })
+      })
+      
+    })
+    
+    function initGroup() {
       var group = new mongroup(conf)
-      
+  
       var procs = [name]
-      
+  
       group.stop(procs, 'SIGQUIT', function(err) {
         if (err) return cb(err)
         group.start(procs, function(err) {
@@ -104,8 +123,7 @@ Host.prototype.deploy = function(name, dir, cb) {
           cb()
         })
       })
-      
-    })
+    }
     
   })
   

@@ -4,7 +4,7 @@
   "description": "work in progress deployment thingy",
   "main": "index.js",
   "scripts": {
-    "start": "node test.js"
+    "test": "node test/test.js"
   },
   "author": "max ogden",
   "license": "BSD",
@@ -13,9 +13,13 @@
     "cicada": "~1.1.1",
     "mongroup": "~1.2.0",
     "git-side-band-message": "0.0.1",
-    "stdout": "0.0.2"
+    "stdout": "0.0.2",
+    "mkdirp": "~0.3.5"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "rimraf": "~2.2.5",
+    "seq": "~0.3.5"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/maxogden/taco.git"

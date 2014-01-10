@@ -1,0 +1,14 @@
+{
+  "name": "testrepo",
+  "version": "0.0.0",
+  "description": "hello world wooo weee woooo waaaaa",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "hat": "0.0.3"
+  }
+}
