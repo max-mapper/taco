@@ -6,10 +6,11 @@ var spawn = require('child_process').spawn
 
 var stdout = require('stdout')
 var through = require('through')
-var vhosts = require('nginx-vhosts')
+var Vhosts = require('nginx-vhosts')
 var mongroup = require('mongroup')
 var sidebandEncode = require('git-side-band-message')
 var mkdirp = require('mkdirp')
+var getport = require('getport')
 var cicada = require('cicada')
 var wrapCommit = require('cicada/lib/commit')
 
@@ -21,6 +22,7 @@ function Host(opts) {
   this.opts = opts || {}
   if (typeof opts.checkout === 'undefined') opts.checkout = false
   if (!opts.dir) opts.dir = process.cwd()
+  this.host = opts.host || 'localhost'
   this.repoDir = opts.dir + '/repos'
   this.workDir = opts.dir + '/checkouts'
   var ciOpts = {
@@ -33,6 +35,16 @@ function Host(opts) {
   }
   this.ci = cicada(ciOpts)
   this.server = http.createServer(this.ci.handle)
+  this.vhosts = Vhosts(opts.nginx, function running(isRunning) {
+    if (!isRunning) {
+      self.vhosts.nginx.start(function(err) {
+        if (err) console.log('nginx start error', err)
+      })
+      console.log('starting nginx...')
+    } else {
+      console.log('nginx is running')
+    }
+  })
   this.ci.on('push', function (push) {
     var response, done
     push.accept()
@@ -56,15 +68,37 @@ function Host(opts) {
         respLog.write('checked out ' + commit.repo + '\n')
         self.prepare(commit.dir, respLog, function(err) {
           if (err) return respLog.write('prepare err ' + err.message + '\n')
-          self.deploy(self.name(commit.repo), commit.dir, function(err) {
-            respLog.write('deployed! err: ' + err + '\n')
-            respLog.end()
-            done()
+          var name = self.name(commit.repo)
+          getport(function(err, port) {
+            if (err) {
+              respLog.write('ERROR could not get port\n')
+              respLog.end()
+              return
+            }
+            self.deploy(name, commit.dir, port, function(err) {
+              self.vhosts.write({
+                name: name,
+                port: port,
+                domain: name + '.' + self.host
+              }, function(err, stdout, stderr) {
+                // give nginx time to reload config
+                setTimeout(function() {
+                  respLog.write('deployed! err: ' + err + '\n')
+                  respLog.end()
+                  done()
+                }, 500)
+              })
+            })
           })
         })
       })
     })
   })
+}
+
+Host.prototype.close = function() {
+  this.server.close()
+  this.vhosts.end()
 }
 
 Host.prototype.prepare = function(dir, res, cb) {
@@ -78,7 +112,7 @@ Host.prototype.prepare = function(dir, res, cb) {
   npmi.on('error', cb)
 }
 
-Host.prototype.deploy = function(name, dir, cb) {
+Host.prototype.deploy = function(name, dir, port, cb) {
   var self = this
   var confPath = this.opts.dir + '/mongroup.conf'
   
@@ -94,7 +128,7 @@ Host.prototype.deploy = function(name, dir, cb) {
     }
     
     if (!conf.processes[name])
-      conf.processes[name] = 'cd ' + dir + ' && npm start'
+      conf.processes[name] = 'cd ' + dir + ' && ' + 'PORT=' + port + ' npm start'
     
     var confString = self.serializeConf(conf)
     
