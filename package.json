@@ -15,7 +15,8 @@
     "git-side-band-message": "0.0.1",
     "stdout": "0.0.2",
     "mkdirp": "~0.3.5",
-    "getport": "~0.1.0"
+    "getport": "~0.1.0",
+    "basic": "~0.0.1"
   },
   "devDependencies": {
     "rimraf": "~2.2.5",

@@ -4,6 +4,7 @@ var http = require('http')
 var path = require('path')
 var spawn = require('child_process').spawn
 
+var basic = require('basic')
 var stdout = require('stdout')
 var through = require('through')
 var Vhosts = require('nginx-vhosts')
@@ -19,12 +20,15 @@ module.exports = Host
 function Host(opts) {
   if (!(this instanceof Host)) return new Host(opts)
   var self = this
+  
   this.opts = opts || {}
   if (typeof opts.checkout === 'undefined') opts.checkout = false
   if (!opts.dir) opts.dir = process.cwd()
+  
   this.host = opts.host || 'localhost'
   this.repoDir = opts.dir + '/repos'
   this.workDir = opts.dir + '/checkouts'
+  
   var ciOpts = {
     repodir: this.repoDir,
     workdir: function(commit) {
@@ -33,8 +37,28 @@ function Host(opts) {
     },
     bare: true
   }
+  
   this.ci = cicada(ciOpts)
-  this.server = http.createServer(this.ci.handle)
+  
+  this.auth = basic(function (user, pass, callback) {
+    var uname = process.env['USER']
+    var upass = process.env['PASS']
+    if (!uname || !upass) return callback(null)
+    if (user === uname && pass === upass) return callback(null)
+    callback(401)
+  })
+  
+  this.server = http.createServer(function(req, res) {
+    self.auth(req, res, function (err) {
+      if (err) {
+        res.writeHead(err, {'WWW-Authenticate': 'Basic realm="Secure Area"'})
+        res.end()
+        return
+      }
+      self.ci.handle(req, res)
+    })
+  })
+  
   this.vhosts = Vhosts(opts.nginx, function running(isRunning) {
     if (!isRunning) {
       self.vhosts.nginx.start(function(err) {
@@ -45,6 +69,7 @@ function Host(opts) {
       console.log('nginx is running')
     }
   })
+  
   this.ci.on('push', function (push) {
     var response, done
     push.accept()
