@@ -5,6 +5,7 @@ var script = require('./')
 var fs = require('fs')
 var path = require('path')
 var server = process.argv[2]
+var vhost = process.argv[3] || '127.0.0.1'
 
 if (!server) return console.error('Usage: install-taco-on-ubuntu user@server')
 
@@ -29,6 +30,7 @@ function installMongroup(cb) {
     if (cb) cb(code)
   })
 
+  ssh.stdin.write('echo "'  + vhost + '" > VHOST\n')
   var scriptStream = fs.createReadStream(path.join(__dirname, 'install.sh'))
   scriptStream.pipe(ssh.stdin)
 }

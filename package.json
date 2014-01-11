@@ -1,6 +1,6 @@
 {
   "name": "taco",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "work in progress deployment thingy",
   "main": "index.js",
   "scripts": {
@@ -16,8 +16,8 @@
     "nginx-vhosts": "~0.0.1",
     "cicada": "maxogden/cicada#pushover-sideband",
     "mongroup": "~1.2.0",
-    "git-side-band-message": "0.0.1",
-    "stdout": "0.0.2",
+    "git-side-band-message": "~0.0.1",
+    "stdout": "~0.0.2",
     "mkdirp": "~0.3.5",
     "getport": "~0.1.0",
     "basic": "~0.0.1",

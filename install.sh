@@ -7,7 +7,7 @@ cd /root
 npm install mongroup taco -g
 mkdir logs
 mkdir pids
-echo "taco = taco" > mongroup.conf
+echo "taco = taco $(cat VHOST)" > mongroup.conf
 echo "logs = logs" >> mongroup.conf
 echo "pids = pids" >> mongroup.conf
 mongroup start
