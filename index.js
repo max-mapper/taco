@@ -63,7 +63,7 @@ function Host(opts) {
   
   var needsReload = false
   
-  nconf.Create(opts.nginx.conf || '/etc/nginx/nginx.conf', function(err, conf) {
+  nconf.create(opts.nginx.conf || '/etc/nginx/nginx.conf', function(err, conf) {
     if (err) throw err
     if (conf.nginx.http.server_names_hash_bucket_size) return initVhosts()
     conf.nginx.http._add('server_names_hash_bucket_size', '64')
