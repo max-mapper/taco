@@ -2,7 +2,7 @@
 var taco = require('./')
 
 var nginxOpts = {
-  confDir: '/usr/local/etc/nginx/conf.d/',
+  confDir: '/etc/nginx/conf.d/',
   pidLocation: '/var/run/nginx.pid'
 }
 

@@ -36,7 +36,7 @@ function installMongroup(cb) {
 function installConf(cb) {
   console.log('Writing mongroup.conf for upstart...')
   var conf = path.join(__dirname, 'mongroup.conf')
-  var remotePath = '/root/mongroup.conf'
+  var remotePath = '/etc/init/mongroup.conf'
   var scp = spawn('scp', hostOverrides.concat([conf, server + ':' + remotePath]))
 
   scp.stdout.pipe(process.stdout)
