@@ -14,6 +14,7 @@ var mkdirp = require('mkdirp')
 var getport = require('getport')
 var cicada = require('cicada')
 var wrapCommit = require('cicada/lib/commit')
+var nconf = require('nginx-conf').NginxConfFile
 
 module.exports = Host
 
@@ -60,16 +61,34 @@ function Host(opts) {
     })
   })
   
-  this.vhosts = Vhosts(opts.nginx, function running(isRunning) {
-    if (!isRunning) {
-      self.vhosts.nginx.start(function(err) {
-        if (err) console.log('nginx start error', err)
-      })
-      console.log('starting nginx...')
-    } else {
-      console.log('nginx is running')
-    }
+  var needsReload = false
+  
+  nconf.Create(opts.nginx.conf || '/etc/nginx/nginx.conf', function(err, conf) {
+    if (err) throw err
+    if (conf.nginx.http.server_names_hash_bucket_size) return initVhosts()
+    conf.nginx.http._add('server_names_hash_bucket_size', '64')
+    fs.writeFile('/etc/nginx/nginx.conf', conf.toString(), function(err) {
+      if (err) throw err
+      initVhosts()
+    })
   })
+  
+  function initVhosts() {
+    self.vhosts = Vhosts(opts.nginx, function running(isRunning) {
+      if (!isRunning) {
+        self.vhosts.nginx.start(function(err) {
+          if (err) console.log('nginx start error', err)
+        })
+        console.log('starting nginx...')
+      } else {
+        console.log('nginx is running')
+        if (needsReload) {
+          self.vhosts.nginx.reload()
+          needsReload = false
+        }
+      }
+    })
+  }
   
   this.ci.on('push', function (push) {
     var response, done
