@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 var taco = require('./')
 
 var nginxOpts = {
@@ -6,9 +7,9 @@ var nginxOpts = {
 }
 
 var host = taco({
-  dir: __dirname + '/example',
+  dir: process.cwd(),
   nginx: nginxOpts,
-  host: 'test.local'
+  host: process.argv[2] || 'test.local'
 })
 
 host.server.listen(8080)

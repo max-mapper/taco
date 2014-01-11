@@ -1,16 +1,20 @@
 {
   "name": "taco",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "work in progress deployment thingy",
   "main": "index.js",
   "scripts": {
     "test": "node test/test.js"
   },
+  "bin": {
+    "install-taco-on-ubuntu": "install.js",
+    "taco": "cli.js"
+  },
   "author": "max ogden",
   "license": "BSD",
   "dependencies": {
     "nginx-vhosts": "~0.0.1",
-    "cicada": "~1.1.1",
+    "cicada": "maxogden/cicada#pushover-sideband",
     "mongroup": "~1.2.0",
     "git-side-band-message": "0.0.1",
     "stdout": "0.0.2",

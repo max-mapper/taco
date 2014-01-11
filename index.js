@@ -39,16 +39,17 @@ function Host(opts) {
   }
   
   this.ci = cicada(ciOpts)
+
+  var uname = process.env['USER']
+  var upass = process.env['PASS']
   
   this.auth = basic(function (user, pass, callback) {
-    var uname = process.env['USER']
-    var upass = process.env['PASS']
-    if (!uname || !upass) return callback(null)
     if (user === uname && pass === upass) return callback(null)
     callback(401)
   })
   
   this.server = http.createServer(function(req, res) {
+    if (!uname || !upass) return self.ci.handle(req, res)
     self.auth(req, res, function (err) {
       if (err) {
         res.writeHead(err, {'WWW-Authenticate': 'Basic realm="Secure Area"'})
@@ -147,13 +148,14 @@ Host.prototype.deploy = function(name, dir, port, cb) {
   fs.readFile(confPath, 'utf8', function(err, conf) {
     if (err) {
       conf = {
-        processes: {},
-        logs: self.opts.dir + '/logs',
-        pids: self.opts.dir + '/pids'
+        processes: {}
       }
     } else {
       conf = mongroup.parseConfig(conf)
     }
+    
+    if (!conf.logs) conf.logs = self.opts.dir + '/logs'
+    if (!conf.pids) conf.pids = self.opts.dir + '/pids'
     
     if (!conf.processes[name])
       conf.processes[name] = 'cd ' + dir + ' && ' + 'PORT=' + port + ' npm start'
