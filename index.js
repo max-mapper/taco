@@ -65,7 +65,8 @@ function Host(opts) {
       // respLog.pipe(stdout())
       self.checkout(push, function(err, commit) {
         if (err) return respLog.write('checkout error ' + err.message + '\n')
-        respLog.write('checked out ' + commit.repo + '\n')
+        respLog.write('received ' + commit.repo + '\n')
+        respLog.write('running npm install...\n')
         self.prepare(commit.dir, respLog, function(err) {
           if (err) return respLog.write('prepare err ' + err.message + '\n')
           var name = self.name(commit.repo)
@@ -76,14 +77,16 @@ function Host(opts) {
               return
             }
             self.deploy(name, commit.dir, port, function(err) {
+              var vhost = name + '.' + self.host
               self.vhosts.write({
                 name: name,
                 port: port,
-                domain: name + '.' + self.host
+                domain: vhost
               }, function(err, stdout, stderr) {
                 // give nginx time to reload config
                 setTimeout(function() {
-                  respLog.write('deployed! err: ' + err + '\n')
+                  if (err) respLog.write('deploy err! ' + err + '\n')
+                  else respLog.write('deployed app at ' + vhost + '\n')
                   respLog.end()
                   done()
                 }, 500)
