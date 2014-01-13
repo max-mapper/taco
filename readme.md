@@ -6,6 +6,10 @@ a taco themed Heroku clone. warning: still alpha-quality
 
 ## quickstart
 
+taco is designed to install onto a brand new ubuntu 13.04 64bit install
+
+here's the recommended way to try it out:
+
 - get a digital ocean account, add your ssh key
 - create a new ubuntu 13.04 droplet, make sure it includes your ssh key
 - buy some domain name and set up two A records pointing at the droplets IP:
