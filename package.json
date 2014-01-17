@@ -14,15 +14,14 @@
   "license": "BSD",
   "dependencies": {
     "nginx-vhosts": "~0.0.1",
-    "cicada": "maxogden/cicada#pushover-sideband",
     "mongroup": "~1.2.0",
-    "git-side-band-message": "~0.0.1",
     "stdout": "~0.0.2",
     "mkdirp": "~0.3.5",
     "getport": "~0.1.0",
     "basic": "~0.0.1",
     "through": "~2.3.4",
-    "nginx-conf": "~0.1.0"
+    "nginx-conf": "~0.1.0",
+    "git-http-backend": "maxogden/git-http-backend#test"
   },
   "devDependencies": {
     "rimraf": "~2.2.5",
