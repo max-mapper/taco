@@ -7,12 +7,13 @@ var spawn = child.spawn
 
 var basic = require('basic')
 var stdout = require('stdout')
-var through = require('through')
-var Vhosts = require('nginx-vhosts')
-var mongroup = require('mongroup')
-var backend = require('git-http-backend')
 var mkdirp = require('mkdirp')
 var getport = require('getport')
+var through = require('through')
+var mongroup = require('mongroup')
+var Vhosts = require('nginx-vhosts')
+var debug = require('debug')('taco')
+var backend = require('git-http-backend')
 var nconf = require('nginx-conf').NginxConfFile
 
 module.exports = Host
@@ -74,15 +75,11 @@ function Host(opts, ready) {
         ps.stdout.pipe(serviceStream).pipe(ps.stdin)
     
         if (service.action === 'push') {
-
-          // serviceStream.on('finish', function() {
-          // })
-          
           ps.on('exit', function() {
+            debug('push receive complete')
             self.handlePush({repo: repo, service: service})
           })
         }
-        
       })
     }
   })
@@ -105,12 +102,12 @@ function Host(opts, ready) {
       if (!isRunning) {
         self.vhosts.nginx.start(function(err) {
           if (!err) return
-          console.log('nginx start error', err)
+          debug('nginx start error ' + err)
           cb(err)
         })
-        console.log('starting nginx...')
+        debug('starting nginx...')
       } else {
-        console.log('nginx is running')
+        debug('nginx is running')
         cb()
         if (needsReload) {
           self.vhosts.nginx.reload()
@@ -136,20 +133,33 @@ Host.prototype.handlePush = function(push) {
   var self = this
   var sideband = push.service.sideband
   self.update(push, function(err) {
-    if (err) return sideband.write('checkout error ' + err.message + '\n')
+    if (err) {
+      sideband.write('checkout error ' + err.message + '\n')
+      debug('Host.handlePush update err: ' + err)
+      return
+    }
     var checkoutDir = self.checkoutDir(push.repo)
-    sideband.write('received ' + push.repo)
+    sideband.write('received ' + push.repo + '\n')
     sideband.write('running npm install...\n')
     self.prepare(checkoutDir, sideband, function(err) {
-      if (err) return sideband.write('prepare err ' + err.message + '\n')
+      if (err) {
+        sideband.write('prepare err ' + err.message + '\n')
+        debug('Host.handlePush prepare err: ' + err)
+        return
+      }
+      debug('Host.handlePush prepare finished')
       var name = self.name(push.repo)
       getport(function(err, port) {
         if (err) {
           sideband.write('ERROR could not get port\n')
           sideband.end()
+          debug('Host.handlePush getport err: ' + err)
           return
         }
+        debug('Host.handlePush getport finished')
         self.deploy(name, checkoutDir, port, function(err) {
+          if (err) debug('Host.handlePush deploy err: ' + err)
+          debug('Host.handlePush deploy finished')
           var vhost = name + '.' + self.host
           self.vhosts.write({
             name: name,
@@ -158,10 +168,12 @@ Host.prototype.handlePush = function(push) {
           }, function(err, stdo, stde) {
             // give nginx time to reload config
             setTimeout(function() {
+              if (err) debug('Host.handlePush vhosts.write err: ' + err)
+              else debug('Host.handlePush vhosts.write finished')
+              
               if (err) sideband.write('deploy err! ' + err + '\n')
               else sideband.write('deployed app at ' + vhost + '\n')
               sideband.end()
-              // done()
             }, 500)
           })
         })
@@ -180,7 +192,7 @@ Host.prototype.prepare = function(dir, res, cb) {
   npmi.stdout.pipe(res, { end: false })
   npmi.stderr.pipe(res, { end: false })
   npmi.on('exit', function (c) {
-    if (c !== 0) return cb({error: true, code: c})
+    if (c !== 0) return cb(new Error('Non-zero exit code: ' + c))
     cb(null, {code: c})
   })
   npmi.on('error', cb)
@@ -261,6 +273,7 @@ Host.prototype.name = function(repo) {
 Host.prototype.update = function (push, cb) {
   var self = this
   fs.exists(this.checkoutDir(push.repo), function(exists) {
+    debug(push.repo + ' exists? ' + exists)
     if (!exists) return self.checkout(push, cb)
     self.pull(push, cb)
   })
@@ -273,9 +286,10 @@ Host.prototype.checkout = function(push, cb) {
 
   function init (err) {
     if (err) return cb('mkdirp(' + dir + ') failed')
-
+    debug('mkdirp() ' + dir + ' finished')
     child.exec('git init', {cwd: dir}, function (err, stdo, stde) {
       if (err) return cb(err)
+      debug('init() ' + dir + ' finished')
       fetch()
     })
   }
@@ -289,6 +303,7 @@ Host.prototype.checkout = function(push, cb) {
     
     child.exec(cmd, { cwd : dir }, function (err) {
       if (err) return cb(err)
+      debug('fetch() ' + dir + ' finished')
       checkout()
     })
   }
@@ -311,18 +326,13 @@ Host.prototype.pull = function (push, cb) {
   push.id = push.commit + '.' + Date.now()
   var cmd = [
     'git', 'pull',
-    'file://' + path.resolve(self.ci.repos.dirMap(push.repo)),
-    push.branch
-  ]
-  runCommand(cmd, { cwd : dir }, function (err) {
+    'file://' + path.resolve(self.repoDir, push.repo),
+    push.service.fields.branch
+  ].join(' ')
+  debug('Host.pull ' + dir + ': ' + cmd)
+  child.exec(cmd, { cwd : dir }, function (err) {
+    debug('Host.pull ' + dir + ' done: ' + err)
     if (err) return cb(err)
-    var c = wrapCommit({
-      id : push.id,
-      dir : dir,
-      repo : push.repo,
-      branch : push.branch,
-      hash : push.commit
-    })
-    cb(null, c)
+    cb(null)
   })
 }

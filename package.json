@@ -4,7 +4,7 @@
   "description": "work in progress deployment thingy",
   "main": "index.js",
   "scripts": {
-    "test": "node test/test.js"
+    "test": "DEBUG=taco node test/test.js"
   },
   "bin": {
     "install-taco-on-ubuntu": "install.js",
@@ -13,7 +13,7 @@
   "author": "max ogden",
   "license": "BSD",
   "dependencies": {
-    "nginx-vhosts": "~0.0.1",
+    "nginx-vhosts": "~0.0.2",
     "mongroup": "~1.2.0",
     "stdout": "~0.0.2",
     "mkdirp": "~0.3.5",
@@ -21,7 +21,8 @@
     "basic": "~0.0.1",
     "through": "~2.3.4",
     "nginx-conf": "~0.1.0",
-    "git-http-backend": "~0.1.1"
+    "git-http-backend": "~0.1.1",
+    "debug": "~0.7.4"
   },
   "devDependencies": {
     "rimraf": "~2.2.5",
