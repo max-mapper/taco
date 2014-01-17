@@ -11,5 +11,5 @@ var host = taco({
   nginx: nginxOpts,
   host: process.argv[2] || 'test.local'
 }, function ready(err) {
-  host.server.listen(8080)
+  host.server.listen(process.env.PORT || 8080)
 })

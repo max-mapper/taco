@@ -73,13 +73,16 @@ function Host(opts, ready) {
         var serviceStream = service.createStream()
         var ps = spawn(service.cmd, service.args.concat(dir))
         ps.stdout.pipe(serviceStream).pipe(ps.stdin)
-    
-        if (service.action === 'push') {
-          ps.on('exit', function() {
-            debug('push receive complete')
+        
+        debug('Host.onService spawn ' + service.cmd + ' ' + service.action)
+        
+        ps.on('exit', function() {
+          debug('Host.onService spawn ' + service.cmd + ' ' + service.action + ' finished')
+          if (service.action === 'push') {
             self.handlePush({repo: repo, service: service})
-          })
-        }
+          }
+        })
+        
       })
     }
   })
@@ -141,6 +144,7 @@ Host.prototype.handlePush = function(push) {
     var checkoutDir = self.checkoutDir(push.repo)
     sideband.write('received ' + push.repo + '\n')
     sideband.write('running npm install...\n')
+    debug('Host.handlePush prepare start for ' + push.repo)
     self.prepare(checkoutDir, sideband, function(err) {
       if (err) {
         sideband.write('prepare err ' + err.message + '\n')
