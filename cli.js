@@ -10,6 +10,6 @@ var host = taco({
   dir: process.cwd(),
   nginx: nginxOpts,
   host: process.argv[2] || 'test.local'
+}, function ready(err) {
+  host.server.listen(8080)
 })
-
-host.server.listen(8080)
