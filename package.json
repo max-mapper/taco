@@ -1,6 +1,6 @@
 {
   "name": "taco",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "work in progress deployment thingy",
   "main": "index.js",
   "scripts": {
