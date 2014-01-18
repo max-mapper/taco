@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 var taco = require('./')
 var http = require('http')
+var port = process.env.PORT || 8080
 
-var nginxOpts = {
-  confDir: '/etc/nginx/conf.d/',
-  pidLocation: '/var/run/nginx.pid'
+var opts = {
+  dir: process.cwd(),
+  host: process.argv[2] || 'test.local',
+  nginx: {
+    confDir: process.argv[3] || '/etc/nginx/conf.d/',
+    conf: process.argv[4] || '/etc/nginx/nginx.conf',
+    pidLocation: process.argv[5] || '/var/run/nginx.pid'
+  }
 }
 
-var host = taco({
-  dir: process.cwd(),
-  nginx: nginxOpts,
-  host: process.argv[2] || 'test.local'
-}, function ready(err) {
-  http.createServer(host.handle).listen(process.env.PORT || 8080)
+var host = taco(opts, function ready(err) {
+  http.createServer(host.handle).listen(port, function() {
+    console.log('listening on', port)
+  })
 })

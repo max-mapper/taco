@@ -101,3 +101,9 @@ taco expects these minimum values in the `opts` object:
 ### host.handle(req, res)
 
 Handle an incoming HTTP request/response.
+
+## run the server
+
+```
+sudo DEBUG=* taco foo.com /usr/local/etc/nginx/conf.d/ /usr/local/etc/nginx/nginx.conf /var/run/nginx.pid
+```
