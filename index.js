@@ -14,7 +14,7 @@ var Vhosts = require('nginx-vhosts')
 var backend = require('git-http-backend')
 var nconf = require('nginx-conf').NginxConfFile
 
-// show debug messages if process.env.DEBUG === tacoa
+// show debug messages if process.env.DEBUG === taco
 var debug = require('debug')('taco')
 
 module.exports = Host
