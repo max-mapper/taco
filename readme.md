@@ -1,14 +1,28 @@
 # taco
 
-a taco themed Heroku clone. warning: still alpha-quality
+a taco themed mini-PaaS for node.js servers. warning: still alpha-quality
 
 ![taco.png](taco.png)
+
+[![NPM](https://nodei.co/npm/taco.png)](https://nodei.co/npm/taco/)
+
+## features
+
+the main goal of taco is to fully automate and configure everything so that from the time
+when you create your server you never have to manually `ssh` in and configure things from
+the server shell.
+
+- git based deploy (`git push taco master` to deploy)
+- easy use with compute providers. installs onto a fresh ubuntu server
+- keep apps running. process monitoring + logging with [mon](https://github.com/visionmedia/mon) and [mongroup](https://github.com/visionmedia/node-mongroup)
+- nginx powered virtual hosts (subdomain routing to multiple apps)
+- runs `npm install` and `npm start` on your app to build + deploy it
 
 ## quickstart
 
 taco is designed to install onto a brand new ubuntu 13.04 64bit install
 
-here's the recommended way to try it out:
+here's the easiest way to try it out from scratch:
 
 - get a digital ocean account, add your ssh key
 - create a new ubuntu 13.04 droplet, make sure it includes your ssh key
@@ -66,3 +80,24 @@ remote: deployed app at hello.yourdomain.com
 To http://mydomain.com:8080/hello.git
  * [new branch]      master -> master
 ```
+
+## API
+
+### var host = require('taco')(opts, ready)
+
+Create a new taco instance.
+
+taco expects these minimum values in the `opts` object:
+
+- `opts.dir`: base path to host
+- `opts.host`: vhost (http host) to route incoming requests with
+- `opts.nginx`: nginx options object, gets passed to the `nginx-vhosts` module
+- `opts.nginx.conf`: path to nginx configuration file
+- `opts.nginx.confDir`: path to a folder where new nginx config files can be created
+- `opts.nginx.pidLocation`: path to the nginx pid file
+
+`ready` will be called when taco is ready to handle requests
+
+### host.handle(req, res)
+
+Handle an incoming HTTP request/response.

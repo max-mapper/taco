@@ -1,7 +1,7 @@
 {
   "name": "taco",
-  "version": "1.3.4",
-  "description": "work in progress deployment thingy",
+  "version": "1.4.0",
+  "description": "a taco themed mini-PaaS for node.js servers",
   "main": "index.js",
   "scripts": {
     "test": "DEBUG=taco node test/test.js"

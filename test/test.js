@@ -1,4 +1,5 @@
 var test = require('tape')
+var http = require('http')
 var rimraf = require('rimraf')
 var mkdirp = require('mkdirp')
 var child = require('child_process')
@@ -50,13 +51,15 @@ test('cleanup', function(t) {
 })
 
 test('deploys a simple http server to a.test.local', function(t) {
+  var server
   var host = taco({
     dir: dir,
     nginx: nginxOpts,
     host: 'test.local'
   }, function ready(err) {
     t.false(err, 'taco should be ready')
-    host.server.listen(8080, function(err) {
+    server = http.createServer(host.handle)
+    server.listen(8080, function(err) {
       t.false(err, 'host is listening')
       request('http://a.test.local', function(err, resp, body) {
         t.false(err, 'nginx should be running')
@@ -101,6 +104,7 @@ test('deploys a simple http server to a.test.local', function(t) {
   function done() {
     host.vhosts.nginx.stop()
     host.close()
+    server.close()
     t.end()
   }
 })

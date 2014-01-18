@@ -1,6 +1,5 @@
 var os = require('os')
 var fs = require('fs')
-var http = require('http')
 var path = require('path')
 var child = require('child_process')
 var spawn = child.spawn
@@ -12,9 +11,11 @@ var getport = require('getport')
 var through = require('through')
 var mongroup = require('mongroup')
 var Vhosts = require('nginx-vhosts')
-var debug = require('debug')('taco')
 var backend = require('git-http-backend')
 var nconf = require('nginx-conf').NginxConfFile
+
+// show debug messages if process.env.DEBUG === tacoa
+var debug = require('debug')('taco')
 
 module.exports = Host
 
@@ -23,9 +24,7 @@ function Host(opts, ready) {
   var self = this
   
   this.opts = opts || {}
-  if (typeof opts.checkout === 'undefined') opts.checkout = false
-  if (!opts.dir) opts.dir = process.cwd()
-  
+  if (!opts.dir) opts.dir = process.cwd()  
   this.host = opts.host || 'localhost'
   this.repoDir = opts.dir + '/repos'
   this.workDir = opts.dir + '/checkouts'
@@ -38,7 +37,7 @@ function Host(opts, ready) {
     callback(401)
   })
   
-  this.server = http.createServer(function(req, res) {
+  this.handle = function(req, res) {
     if (!uname || !upass) return accept()
     
     self.auth(req, res, function (err) {
@@ -85,7 +84,7 @@ function Host(opts, ready) {
         
       })
     }
-  })
+  }
   
   var needsReload = false
   
@@ -119,6 +118,7 @@ function Host(opts, ready) {
       }
     })
   }
+  
 }
 
 Host.prototype.init = function(dir, cb) {
@@ -185,10 +185,9 @@ Host.prototype.handlePush = function(push) {
     })
   })
 }
-  
+
 Host.prototype.close = function() {
-  this.server.close()
-  this.vhosts.end()
+  this.vhosts.nginx.end()
 }
 
 Host.prototype.prepare = function(dir, res, cb) {

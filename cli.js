@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 var taco = require('./')
+var http = require('http')
 
 var nginxOpts = {
   confDir: '/etc/nginx/conf.d/',
@@ -11,5 +12,5 @@ var host = taco({
   nginx: nginxOpts,
   host: process.argv[2] || 'test.local'
 }, function ready(err) {
-  host.server.listen(process.env.PORT || 8080)
+  http.createServer(host.handle).listen(process.env.PORT || 8080)
 })
