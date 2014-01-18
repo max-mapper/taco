@@ -27,6 +27,7 @@ feel free to open an issue for these and declare that you want to work on them, 
 - automated domain registration + dns configuration
 - support other compute providers via http://npmjs.org/pkgcloud integration
 - cli client for things like `taco logs`, `taco restart appname` etc
+- automatic server provisioning using e.g. the digital ocean API
 
 ## quickstart
 
