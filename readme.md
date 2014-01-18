@@ -25,7 +25,7 @@ feel free to open an issue for these and declare that you want to work on them, 
 - docker support
 - web admin ui
 - automated domain registration + dns configuration
-- support other compute providers via http://npmjs.org/pkgcloud integration
+- support other compute providers via http://npmjs.org/santa integration. taco + santa = win
 - cli client for things like `taco logs`, `taco restart appname` etc
 - automatic server provisioning using e.g. the digital ocean API
 
