@@ -1,6 +1,6 @@
 # taco
 
-a taco themed mini-PaaS for node.js servers. warning: still alpha-quality
+a taco themed PaaS for node.js servers. warning: still alpha-quality
 
 ![taco.png](taco.png)
 
@@ -17,6 +17,16 @@ the server shell.
 - keep apps running. process monitoring + logging with [mon](https://github.com/visionmedia/mon) and [mongroup](https://github.com/visionmedia/node-mongroup)
 - nginx powered virtual hosts (subdomain routing to multiple apps)
 - runs `npm install` and `npm start` on your app to build + deploy it
+
+### wishlist
+
+feel free to open an issue for these and declare that you want to work on them, then send a PR :)
+
+- docker support
+- web admin ui
+- automated domain registration + dns configuration
+- support other compute providers via http://npmjs.org/pkgcloud integration
+- cli client for things like `taco logs`, `taco restart appname` etc
 
 ## quickstart
 
@@ -105,5 +115,5 @@ Handle an incoming HTTP request/response.
 ## run the server
 
 ```
-sudo DEBUG=* taco foo.com /usr/local/etc/nginx/conf.d/ /usr/local/etc/nginx/nginx.conf /var/run/nginx.pid
+sudo DEBUG=* USER=admin PASS=pass taco foo.com /usr/local/etc/nginx/conf.d/ /usr/local/etc/nginx/nginx.conf /var/run/nginx.pid
 ```
