@@ -28,7 +28,7 @@ function Host(opts, ready) {
   if (!opts.dir) opts.dir = process.cwd()
   this.host = opts.host || 'localhost'
   this.repoDir = opts.repoDir || path.join(opts.dir, 'repos')
-  this.workDir = opts.workDir || path.join(opts.dir, 'checkouts')  
+  this.workDir = opts.workDir || path.join(opts.dir, 'checkouts')
   this.username = opts.username || process.env['USER']
   this.password = opts.password || process.env['PASS']
   
@@ -37,35 +37,46 @@ function Host(opts, ready) {
     callback(401)
   })
   
-  var needsReload = false
-  
+  // TODO make vhosts more abstract, not nginx specific
+  this.setupNginx(function(err) {
+    if (ready) ready(err)
+  })
+}
+
+Host.prototype.setupNginx = function(cb) {
+  var self = this
+  var opts = this.opts
+  // make sure the nginx.conf has server_names_hash_bucket_size === 64
   var confPath = opts.nginx.conf || '/etc/nginx/nginx.conf'
+  debug('Host.setup opening nginx conf ' + confPath)
+  
   nconf.create(confPath, function(err, conf) {
-    if (err) return ready(err)
-    if (conf.nginx.http.server_names_hash_bucket_size) return initVhosts(ready)
+    if (err) return cb(err)
+    if (conf.nginx.http.server_names_hash_bucket_size) {
+      debug('Host.setup nginx conf already configured correctly')
+      return initVhosts()
+    }
     conf.nginx.http._add('server_names_hash_bucket_size', '64')
+    debug('Host.setup updating nginx conf with new configuration')
     fs.writeFile(confPath, conf.toString(), function(err) {
-      if (err) return ready(err)
-      initVhosts(ready)
+      if (err) return cb(err)
+      initVhosts()
     })
   })
   
-  function initVhosts(cb) {
+  // make sure nginx is running, start it if not
+  function initVhosts() {
     self.vhosts = Vhosts(opts.nginx, function running(isRunning) {
       if (!isRunning) {
         self.vhosts.nginx.start(function(err) {
           if (!err) return
-          debug('nginx start error ' + err)
+          debug('Host.setup nginx start error ' + err)
           cb(err)
         })
-        debug('starting nginx...')
+        debug('Host.setup starting nginx...')
       } else {
-        debug('nginx is running')
+        debug('Host.setup nginx is running')
         cb()
-        if (needsReload) {
-          self.vhosts.nginx.reload()
-          needsReload = false
-        }
       }
     })
   }
@@ -258,7 +269,7 @@ Host.prototype.prepare = function(dir, res, cb) {
 
 Host.prototype.monitor = function(name, dir, port, cb) {
   var self = this
-  var confPath = this.opts.dir + '/mongroup.conf'
+  var confPath = path.join(this.opts.dir, 'mongroup.conf')
   
   fs.readFile(confPath, 'utf8', function(err, conf) {
     if (err) {
@@ -269,9 +280,10 @@ Host.prototype.monitor = function(name, dir, port, cb) {
       conf = mongroup.parseConfig(conf)
     }
     
-    if (!conf.logs) conf.logs = self.opts.dir + '/logs'
-    if (!conf.pids) conf.pids = self.opts.dir + '/pids'
+    if (!conf.logs) conf.logs = path.join(self.opts.dir, 'logs')
+    if (!conf.pids) conf.pids = path.join(self.opts.dir, 'pids')
     
+    // TODO write PORT into file and use $(cat PORTFILE)
     if (!conf.processes[name])
       conf.processes[name] = 'cd ' + dir + ' && ' + 'PORT=' + port + ' npm start'
     
@@ -287,7 +299,6 @@ Host.prototype.monitor = function(name, dir, port, cb) {
           initGroup()
         })
       })
-      
     })
     
     function initGroup() {
@@ -303,7 +314,6 @@ Host.prototype.monitor = function(name, dir, port, cb) {
         })
       })
     }
-    
   })
   
 }
@@ -321,7 +331,7 @@ Host.prototype.serializeConf = function(conf) {
 }
 
 Host.prototype.checkoutDir = function(repo) {
-  return this.workDir + '/' + this.name(repo)
+  return path.join(this.workDir, this.name(repo))
 }
 
 Host.prototype.name = function(repo) {
