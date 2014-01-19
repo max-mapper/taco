@@ -29,6 +29,7 @@ function Host(opts, ready) {
   this.host = opts.host || 'localhost'
   this.repoDir = opts.repoDir || path.join(opts.dir, 'repos')
   this.workDir = opts.workDir || path.join(opts.dir, 'checkouts')
+  this.portsDir = opts.portsDir || path.join(opts.dir, 'ports')
   this.username = opts.username || process.env['USER']
   this.password = opts.password || process.env['PASS']
   
@@ -39,7 +40,9 @@ function Host(opts, ready) {
   
   // TODO make vhosts more abstract, not nginx specific
   this.setupNginx(function(err) {
-    if (ready) ready(err)
+    mkdirp(self.portsDir, function(err) {
+      if (ready) ready(err)
+    })
   })
 }
 
@@ -172,6 +175,7 @@ Host.prototype.handlePush = function(push, cb) {
   var sideband = push.service.sideband
   var checkoutDir = self.checkoutDir(push.repo)
   var name = self.name(push.repo)
+  var portFile = path.join(this.portsDir, name)
   
   self.update(push, function(err) {
     if (err) {
@@ -199,20 +203,33 @@ Host.prototype.handlePush = function(push, cb) {
   }
 
   function getPort() {
-    getport(function(err, port) {
+    fs.readFile(portFile, function(err, buf) {
+      if (err) return getport(function(err, port) {
+        if (err) return gotPort(err)
+        debug('Host.handlePush getPort writing new portFile ' + portFile)
+        fs.writeFile(portFile, port.toString(), function(err) {
+          gotPort(err, port)
+        })
+      })
+      var port = +buf.toString()
+      debug('Host.handlePush getPort read port from portFile: ' + port)
+      gotPort(err, port)
+    })
+    
+    function gotPort(err, port) {
       if (err) {
         sideband.write('ERROR could not get port\n')
         sideband.end()
         debug('Host.handlePush getport err: ' + err)
         return cb(err)
       }
-      debug('Host.handlePush getport finished')
+      debug('Host.handlePush getport got port ' + port)
       monitor(port)
-    })
+    }
   }
 
   function monitor(port) {
-    self.monitor(name, checkoutDir, port, function(err) {
+    self.monitor(name, checkoutDir, function(err) {
       if (err) {
         debug('Host.handlePush monitor err: ' + err)
         sideband.write('ERROR could not monitor app: ' + err + '\n')
@@ -267,7 +284,7 @@ Host.prototype.prepare = function(dir, res, cb) {
   npmi.on('error', cb)
 }
 
-Host.prototype.monitor = function(name, dir, port, cb) {
+Host.prototype.monitor = function(name, dir, cb) {
   var self = this
   var confPath = path.join(this.opts.dir, 'mongroup.conf')
   
@@ -283,9 +300,10 @@ Host.prototype.monitor = function(name, dir, port, cb) {
     if (!conf.logs) conf.logs = path.join(self.opts.dir, 'logs')
     if (!conf.pids) conf.pids = path.join(self.opts.dir, 'pids')
     
-    // TODO write PORT into file and use $(cat PORTFILE)
+    var portFile = path.join(self.portsDir, name)
+
     if (!conf.processes[name])
-      conf.processes[name] = 'cd ' + dir + ' && ' + 'PORT=' + port + ' npm start'
+      conf.processes[name] = 'cd ' + dir + ' && ' + 'PORT=$(cat ' + portFile +') npm start'
     
     var confString = self.serializeConf(conf)
     
