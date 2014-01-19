@@ -11,6 +11,7 @@ var through = require('through')
 var mongroup = require('mongroup')
 var Vhosts = require('nginx-vhosts')
 var backend = require('git-http-backend')
+var readDirFiles = require('read-dir-files')
 var nconf = require('nginx-conf').NginxConfFile
 
 // show debug messages if process.env.DEBUG === taco
@@ -41,8 +42,23 @@ function Host(opts, ready) {
   // TODO make vhosts more abstract, not nginx specific
   this.setupNginx(function(err) {
     mkdirp(self.portsDir, function(err) {
-      if (ready) ready(err)
+      self.readPorts(function(err, ports) {
+        if (ready && err) return ready(err)
+        self.ports = ports
+        ready()
+      })
     })
+  })
+}
+
+Host.prototype.readPorts = function(cb) {
+  readDirFiles.read(this.portsDir, function (err, files) {
+    if (err) return cb(err)
+    Object.keys(files).map(function(name) {
+      // parse ports as integers
+      files[name] = +files[name].toString()
+    })
+    cb(null, files)
   })
 }
 
@@ -204,17 +220,31 @@ Host.prototype.handlePush = function(push, cb) {
 
   function getPort() {
     fs.readFile(portFile, function(err, buf) {
-      if (err) return getport(function(err, port) {
+      if (err) return newPort()
+      var port = +buf.toString()
+      debug('Host.handlePush getPort read port from portFile: ' + port)
+      gotPort(err, port)
+    })
+    
+    function newPort() {
+      getport(function(err, port) {
         if (err) return gotPort(err)
+
+        // check the port cache to make sure another app in mid-deployment
+        // hasn't been assigned the port we just got
+        var existingPorts = Object.keys(self.ports).map(function(n) { return self.ports[n] })
+        if (existingPorts.indexOf(port) > -1) {
+          debug('Host.handlePush newPort port already assigned, getting new one')
+          return newPort()
+        }
+        self.ports[name] = port
+        
         debug('Host.handlePush getPort writing new portFile ' + portFile)
         fs.writeFile(portFile, port.toString(), function(err) {
           gotPort(err, port)
         })
       })
-      var port = +buf.toString()
-      debug('Host.handlePush getPort read port from portFile: ' + port)
-      gotPort(err, port)
-    })
+    }
     
     function gotPort(err, port) {
       if (err) {
