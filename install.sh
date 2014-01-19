@@ -12,4 +12,4 @@ if [ ! -f mongroup.conf ]; then
     echo "logs = logs" >> mongroup.conf
     echo "pids = pids" >> mongroup.conf
 fi
-mongroup start
+mongroup restart taco
