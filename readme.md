@@ -76,7 +76,7 @@ will deploy to `hello.mydomain.com`
 now you just need to push:
 
 ```
-git push origin mydomain
+git push mydomain master
 Counting objects: 38, done.
 Delta compression using up to 4 threads.
 Compressing objects: 100% (26/26), done.
