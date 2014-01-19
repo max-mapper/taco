@@ -5,7 +5,6 @@ var child = require('child_process')
 var spawn = child.spawn
 
 var basic = require('basic')
-var stdout = require('stdout')
 var mkdirp = require('mkdirp')
 var getport = require('getport')
 var through = require('through')
@@ -24,67 +23,19 @@ function Host(opts, ready) {
   var self = this
   
   this.opts = opts || {}
-  if (!opts.dir) opts.dir = process.cwd()  
+
+  // set up default options
+  if (!opts.dir) opts.dir = process.cwd()
   this.host = opts.host || 'localhost'
-  this.repoDir = opts.dir + '/repos'
-  this.workDir = opts.dir + '/checkouts'
-  
-  var uname = process.env['USER']
-  var upass = process.env['PASS']
+  this.repoDir = opts.repoDir || path.join(opts.dir, 'repos')
+  this.workDir = opts.workDir || path.join(opts.dir, 'checkouts')  
+  this.username = opts.username || process.env['USER']
+  this.password = opts.password || process.env['PASS']
   
   this.auth = basic(function (user, pass, callback) {
-    if (user === uname && pass === upass) return callback(null)
+    if (user === self.username && pass === self.password) return callback(null)
     callback(401)
   })
-  
-  this.handle = function(req, res) {
-    if (!uname || !upass) return accept()
-    
-    self.auth(req, res, function (err) {
-      if (err) {
-        res.writeHead(err, {'WWW-Authenticate': 'Basic realm="Secure Area"'})
-        res.end()
-        return
-      }
-      accept()
-    })
-    
-    function accept() {
-      var bs = backend(req.url, onService)
-      req.pipe(bs).pipe(res)
-    }
-    
-    function onService(err, service) {
-      if (err) return res.end(JSON.stringify({err: err}))
-      if (service.action === 'push') {
-        service.sideband = service.createBand()
-      }
-      var repo = req.url.split('/')[1]
-      var dir = path.join(self.repoDir, repo)
-      res.setHeader('content-type', service.type)
-      
-      self.init(dir, function(err, sto, ste) {
-        if (err || ste) {
-          var errObj = {err: err, stderr: ste, stdout: sto}
-          return res.end(JSON.stringify(errObj))
-        }
-        
-        var serviceStream = service.createStream()
-        var ps = spawn(service.cmd, service.args.concat(dir))
-        ps.stdout.pipe(serviceStream).pipe(ps.stdin)
-        
-        debug('Host.onService spawn ' + service.cmd + ' ' + service.action)
-        
-        ps.on('exit', function() {
-          debug('Host.onService spawn ' + service.cmd + ' ' + service.action + ' finished')
-          if (service.action === 'push') {
-            self.handlePush({repo: repo, service: service})
-          }
-        })
-        
-      })
-    }
-  }
   
   var needsReload = false
   
@@ -118,7 +69,78 @@ function Host(opts, ready) {
       }
     })
   }
+}
+
+Host.prototype.handle = function(req, res) {
+  var self = this
   
+  // if no user + pass specified then let anyone push
+  if (!this.username || !this.password) {
+    debug('Host.handle no user/pass set, accepting request')
+    return accept()
+  }
+  
+  this.auth(req, res, function (err) {
+    if (err) {
+      debug('Host.handle auth invalid user/pass')
+      res.writeHead(err, {'WWW-Authenticate': 'Basic realm="Secure Area"'})
+      res.end()
+      return
+    }
+    debug('Host.handle auth success, accepting request')
+    accept()
+  })
+  
+  function accept() {
+    // hook the req/res up to git-http-backend
+    var bs = backend(req.url, onService)
+    req.pipe(bs).pipe(res)
+  }
+  
+  // in a typical git push this will get called once for
+  // 'info' and then again for 'push'
+  function onService(err, service) {
+    if (err) {
+      debug('Host.handle onService ' + service.action + ' err: ' + err)
+      return res.end(JSON.stringify({err: err}))
+    }
+    
+    if (service.action === 'push') {
+      service.sideband = service.createBand()
+    }
+    
+    res.setHeader('content-type', service.type)
+
+    // TODO pluggable url parsing
+    var repo = req.url.split('/')[1]
+    var dir = path.join(self.repoDir, repo)
+    
+    // create-if-not-exists the directory + bare git repo to store the incoming repo
+    self.init(dir, function(err, sto, ste) {
+      if (err || ste) {
+        var errObj = {err: err, stderr: ste, stdout: sto}
+        var errStr = JSON.stringify(errObj)
+        debug('Host.handle onService ' + service.action + ' init dir err: ' + errStr)
+        return res.end(errStr)
+      }
+      
+      var serviceStream = service.createStream()
+      
+      // shell out to the appropriate `git` command, TODO implement this in pure JS :)
+      var ps = spawn(service.cmd, service.args.concat(dir))
+      ps.stdout.pipe(serviceStream).pipe(ps.stdin)
+      
+      debug('Host.onService spawn ' + service.cmd + ' ' + service.action)
+      
+      ps.on('exit', function() {
+        debug('Host.onService spawn ' + service.cmd + ' ' + service.action + ' finished')
+        if (service.action === 'push') {
+          self.handlePush({repo: repo, service: service})
+        }
+      })
+      
+    })
+  }
 }
 
 Host.prototype.init = function(dir, cb) {
@@ -127,63 +149,96 @@ Host.prototype.init = function(dir, cb) {
     if (exists) return cb()
     mkdirp(dir, function(err) {
       if (err) return cb(err)
+      debug('Host.init creating new bare repo in ' + dir)
       child.exec('git init --bare', {cwd: dir}, cb)
     })
   })
 }
 
-Host.prototype.handlePush = function(push) {
+Host.prototype.handlePush = function(push, cb) {
   var self = this
+  if (!cb) cb = function noop() {}
   var sideband = push.service.sideband
+  var checkoutDir = self.checkoutDir(push.repo)
+  var name = self.name(push.repo)
+  
   self.update(push, function(err) {
     if (err) {
       sideband.write('checkout error ' + err.message + '\n')
       debug('Host.handlePush update err: ' + err)
-      return
+      return cb(err)
     }
-    var checkoutDir = self.checkoutDir(push.repo)
-    sideband.write('received ' + push.repo + '\n')
-    sideband.write('running npm install...\n')
+    prepare()
+  })
+  
+  function prepare() {
+    sideband.write('Received ' + push.repo + '\n')
+    sideband.write('Running npm install...\n')
     debug('Host.handlePush prepare start for ' + push.repo)
     self.prepare(checkoutDir, sideband, function(err) {
       if (err) {
-        sideband.write('prepare err ' + err.message + '\n')
+        sideband.write('ERROR preparing app: ' + err.message + '\n')
+        sideband.end()
         debug('Host.handlePush prepare err: ' + err)
-        return
+        return cb(err)
       }
       debug('Host.handlePush prepare finished')
-      var name = self.name(push.repo)
-      getport(function(err, port) {
-        if (err) {
-          sideband.write('ERROR could not get port\n')
-          sideband.end()
-          debug('Host.handlePush getport err: ' + err)
-          return
-        }
-        debug('Host.handlePush getport finished')
-        self.deploy(name, checkoutDir, port, function(err) {
-          if (err) debug('Host.handlePush deploy err: ' + err)
-          debug('Host.handlePush deploy finished')
-          var vhost = name + '.' + self.host
-          self.vhosts.write({
-            name: name,
-            port: port,
-            domain: vhost
-          }, function(err, stdo, stde) {
-            // give nginx time to reload config
-            setTimeout(function() {
-              if (err) debug('Host.handlePush vhosts.write err: ' + err)
-              else debug('Host.handlePush vhosts.write finished')
-              
-              if (err) sideband.write('deploy err! ' + err + '\n')
-              else sideband.write('deployed app at ' + vhost + '\n')
-              sideband.end()
-            }, 500)
-          })
-        })
+      getPort()
+    })
+  }
+
+  function getPort() {
+    getport(function(err, port) {
+      if (err) {
+        sideband.write('ERROR could not get port\n')
+        sideband.end()
+        debug('Host.handlePush getport err: ' + err)
+        return cb(err)
+      }
+      debug('Host.handlePush getport finished')
+      monitor(port)
+    })
+  }
+
+  function monitor(port) {
+    self.monitor(name, checkoutDir, port, function(err) {
+      if (err) {
+        debug('Host.handlePush monitor err: ' + err)
+        sideband.write('ERROR could not monitor app: ' + err + '\n')
+        sideband.end()
+        return cb(err)
+      }
+      debug('Host.handlePush monitor finished')
+      vhost({
+        name: name,
+        port: port,
+        domain: name + '.' + self.host
       })
     })
-  })
+  }
+  
+  function vhost(opts) {
+    self.vhosts.write(opts, function(err, stdo, stde) {
+      // give nginx time to reload config
+      setTimeout(function() {
+        if (err) debug('Host.handlePush vhosts.write err: ' + err)
+        else debug('Host.handlePush vhosts.write finished')
+        finish(err, opts)
+      }, 500)
+    })
+  }
+  
+  function finish(err, opts) {
+    if (err) {
+      sideband.write('Deploy error! ' + err + '\n')
+      sideband.end()
+      return cb(err)
+    }
+    if (opts.domain) sideband.write('Deployed at http://' + opts.domain + '\n')
+    else sideband.write('Deployed on port ' + opts.port)
+    sideband.end()
+    cb()
+  }
 }
 
 Host.prototype.close = function() {
@@ -201,7 +256,7 @@ Host.prototype.prepare = function(dir, res, cb) {
   npmi.on('error', cb)
 }
 
-Host.prototype.deploy = function(name, dir, port, cb) {
+Host.prototype.monitor = function(name, dir, port, cb) {
   var self = this
   var confPath = this.opts.dir + '/mongroup.conf'
   

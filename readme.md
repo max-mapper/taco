@@ -119,6 +119,13 @@ Handle an incoming HTTP request/response.
 sudo DEBUG=* USER=admin PASS=pass taco foo.com /usr/local/etc/nginx/conf.d/ /usr/local/etc/nginx/nginx.conf /var/run/nginx.pid
 ```
 
+## run the tests
+
+```
+npm install
+sudo npm test
+```
+
 ## why not heroku/dokku/flynn/deis/etc?
 
 taco doesn't implement all the bells and whistles needed to deploy 'application stacks' like LAMP or Rails. all you get is support for node programs that can be configured + started using `npm install` and `npm start`.

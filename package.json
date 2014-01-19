@@ -1,6 +1,6 @@
 {
   "name": "taco",
-  "version": "1.4.1",
+  "version": "1.4.3",
   "description": "a taco themed PaaS for node.js servers",
   "main": "index.js",
   "scripts": {
@@ -15,7 +15,6 @@
   "dependencies": {
     "nginx-vhosts": "~0.0.2",
     "mongroup": "~1.2.0",
-    "stdout": "~0.0.2",
     "mkdirp": "~0.3.5",
     "getport": "~0.1.0",
     "basic": "~0.0.1",

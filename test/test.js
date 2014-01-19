@@ -58,7 +58,7 @@ test('deploys a simple http server to a.test.local', function(t) {
     host: 'test.local'
   }, function ready(err) {
     t.false(err, 'taco should be ready')
-    server = http.createServer(host.handle)
+    server = http.createServer(host.handle.bind(host))
     server.listen(8080, function(err) {
       t.false(err, 'host is listening')
       request('http://a.test.local', function(err, resp, body) {
