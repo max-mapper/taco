@@ -104,6 +104,13 @@ Host.prototype.setupNginx = function(cb) {
 Host.prototype.handle = function(req, res) {
   var self = this
   
+  var ip = req.headers['x-forwarded-for'] ||
+       req.connection.remoteAddress ||
+       req.socket.remoteAddress ||
+       req.connection.socket.remoteAddress
+  
+  debug('Host.handle ' + ip + ' - ' + req.method + ' - ' + req.url)
+  
   // if no user + pass specified then let anyone push
   if (!this.username || !this.password) {
     debug('Host.handle no user/pass set, accepting request')
@@ -112,7 +119,8 @@ Host.prototype.handle = function(req, res) {
   
   this.auth(req, res, function (err) {
     if (err) {
-      debug('Host.handle auth invalid user/pass')
+
+      debug('Host.handle auth invalid user/pass', ip)
       res.writeHead(err, {'WWW-Authenticate': 'Basic realm="Secure Area"'})
       res.end()
       return
