@@ -95,7 +95,12 @@ Host.prototype.setupNginx = function(cb) {
         debug('Host.setup starting nginx...')
       } else {
         debug('Host.setup nginx is running')
-        cb()
+        debug('Host.setup reloading nginx configuration...')
+        self.vhosts.nginx.reload(function(err, stdo, stde) {
+          setTimeout(function() {
+            cb(err)
+          }, 500)
+        })
       }
     })
   }

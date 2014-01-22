@@ -1,6 +1,6 @@
 {
   "name": "taco",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "a taco themed PaaS for node.js servers",
   "main": "index.js",
   "scripts": {

@@ -31,9 +31,11 @@ feel free to open an issue for these and declare that you want to work on them, 
 
 ## quickstart
 
-taco is designed to install onto a brand new ubuntu 13.04 64bit install
+it takes around 10 minutes to get up and running with taco
 
-here's the easiest way to try it out from scratch:
+### create a digital ocean droplet, set up DNS
+
+note: you can use any server running a brand new ubuntu 13.04 install, digital ocean just happens to be the cheapest way to get one if you don't already have one
 
 - get a digital ocean account, add your ssh key
 - create a new ubuntu 13.04 droplet, make sure it includes your ssh key
@@ -44,16 +46,59 @@ here's the easiest way to try it out from scratch:
 yourdomain.com -> IP
 ```
 
-- install and run these on your local machine:
+once you have your DNS set up properly you can run the magic one liner: `./bootstrap.sh admin yourdomain.com` 
+
+or follow these step by step instructions (recommended for first-timers):
+
+### install node and nginx
+
+I wrote a couple of npm modules to automate this, here's how to run them:
 
 ```
-npm install taco install-node-on-ubuntu install-nginx-on-ubuntu -g
+npm install install-node-on-ubuntu install-nginx-on-ubuntu -g
 install-nginx-on-ubuntu root@yourdomain.com
 install-node-on-ubuntu root@yourdomain.com
-install-taco-on-ubuntu root@yourdomain.com yourdomain.com
 ```
 
-- deploy your first app.
+### do some basic setup on the new ubuntu install
+
+this step is optional, but recommended so that you don't get pwn3z0red
+
+run https://gist.github.com/maxogden/8551202 which:
+
+- updates ubuntu
+- creates a sudo-able non-root user called admin (for logging into the server later and doing stuff)
+- sets up ssh keys for that user by copying the over from /root/.ssh
+- disables ssh root login (that's what admin is for)
+- creates a system user "taco" for the taco process to run as
+- sets up basic iptables firewall
+
+one-liner:
+
+```
+wget -qO- https://gist.github.com/maxogden/8551202/raw/3de4f5b818da41df8a40f41f89166a2af98f4da1/initial.sh | ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@example.com
+```
+
+(replace `example.com` with your server)
+
+or if you want the user to be something other than `admin` you can log in to your server and run it this way:
+
+```
+wget -qO- https://gist.github.com/maxogden/8551202/raw/3de4f5b818da41df8a40f41f89166a2af98f4da1/initial.sh | sudo NEW_USER=admin bash
+```
+
+### install taco
+
+note: use `root` if you didn't do the recommended security steps above, otherwise use `admin` as the user
+
+run these from your local machine:
+
+```
+npm install taco -g
+install-taco-on-ubuntu admin yourdomain.com
+```
+
+### deploy your first app
 
 - apps must have `npm install` and `npm start` as the only two setup steps
 - they must also listen on `process.env.PORT`
@@ -65,10 +110,8 @@ to deploy the example:
 ```
 git clone https://github.com/maxogden/hello-world-server.git
 cd hello-world-server
-git remote add mydomain http://mydomain.com:8080/hello.git
+git remote add taco http://taco.mydomain.com/hello.git
 ```
-
-right now taco listens for git pushes on :8080
 
 the end of the remote url should be `app-subdomain.git`, so in this case the app
 will deploy to `hello.mydomain.com`
@@ -76,18 +119,18 @@ will deploy to `hello.mydomain.com`
 now you just need to push:
 
 ```
-git push mydomain master
+git push taco master
 Counting objects: 38, done.
 Delta compression using up to 4 threads.
 Compressing objects: 100% (26/26), done.
 Writing objects: 100% (38/38), 3.45 KiB | 0 bytes/s, done.
 Total 38 (delta 4), reused 0 (delta 0)
-remote: received hello.git
-remote: running npm install...
+remote: Received hello.git
+remote: Running npm install...
 remote: npm http GET https://registry.npmjs.org/hat/0.0.3
 remote: npm http 304 https://registry.npmjs.org/hat/0.0.3
 remote: hat@0.0.3 node_modules/hat
-remote: deployed app at hello.yourdomain.com
+remote: Deployed app at http://hello.yourdomain.com
 To http://mydomain.com:8080/hello.git
  * [new branch]      master -> master
 ```
