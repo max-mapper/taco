@@ -27,7 +27,10 @@
   "devDependencies": {
     "rimraf": "~2.2.5",
     "seq": "~0.3.5",
-    "mkdirp": "~0.3.5"
+    "mkdirp": "~0.3.5",
+    "tape": "~2.3.2",
+    "stdout": "0.0.2",
+    "request": "~2.33.0"
   },
   "repository": {
     "type": "git",
