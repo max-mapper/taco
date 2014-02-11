@@ -116,6 +116,8 @@ git remote add taco http://taco.mydomain.com/hello.git
 the end of the remote url should be `app-subdomain.git`, so in this case the app
 will deploy to `hello.mydomain.com`
 
+**git protip** you may have to run `git config --global http.postBuffer 524288000` to make your git client properly push large repos, otherwise pushes might hang when uploading to taco
+
 now you just need to push:
 
 ```
