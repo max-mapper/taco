@@ -3,7 +3,8 @@ var http = require('http')
 
 var nginxOpts = {
   confDir: '/usr/local/etc/nginx/conf.d/',
-  pidLocation: '/var/run/nginx.pid'
+  pidLocation: '/var/run/nginx.pid',
+  conf: '/usr/local/etc/nginx/nginx.conf'
 }
 
 var host = taco({
@@ -13,5 +14,3 @@ var host = taco({
 }, function ready(err) {
   http.createServer(host.handle.bind(host)).listen(process.env.PORT || 8080)
 })
-
-host.server.listen(8080)

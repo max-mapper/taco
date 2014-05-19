@@ -1,6 +1,7 @@
 var os = require('os')
 var fs = require('fs')
 var path = require('path')
+var crypto = require('crypto')
 var child = require('child_process')
 var spawn = child.spawn
 
@@ -137,6 +138,7 @@ Host.prototype.handle = function(req, res) {
   function accept() {
     // hook the req/res up to git-http-backend
     var bs = backend(req.url, onService)
+    console.log(req.headers)
     req.pipe(bs).pipe(res)
   }
   

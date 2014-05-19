@@ -62,7 +62,7 @@ test('deploys a simple http server to a.test.local', function(t) {
     server.listen(8080, function(err) {
       t.false(err, 'host is listening')
       request('http://a.test.local', function(err, resp, body) {
-        t.false(err, 'nginx should be running')
+        t.false(err, 'GET a.test.local should not err')
         t.true(body.indexOf('num') === -1, 'a.test.local should not be vhosted')
         deploy()
       })
