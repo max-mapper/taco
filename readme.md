@@ -11,7 +11,7 @@ a taco themed modular deployment system for unix
 - `taco-build` - takes a tarball, runs a build script inside it, and outputs a tarball
 - `taco-deploy-mongroup` - deploys tarball using mongroup
 - `taco-pack` - creates tarball of an application
-- `taco-nginx` - updates nginx configuration to route <package.json name>.* subdomain traffic to your app, then starts your app process
+- `taco-nginx` - updates nginx configuration to route `<package.json name>.*` subdomain traffic to your app, then starts your app process
 
 ## example
 
