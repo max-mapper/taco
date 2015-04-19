@@ -21,7 +21,7 @@ we recommend setting a `start-production` script in your package.json. taco depl
 
 ```json
 {
-  "name": "my-cool-server"
+  "name": "my-cool-server",
   "scripts": {
     "start": "node server.js",
     "start-production": "taco-nginx node server.js"
