@@ -8,9 +8,9 @@ a taco themed modular deployment system for unix
 
 ### components
 
-- `taco-build` - takes a tarball, runs a build script inside it, and outputs a tarball
-- `taco-deploy-mongroup` - deploys tarball using mongroup
 - `taco-pack` - creates tarball of an application
+- `taco-build` - takes a tarball, runs a build script inside it, and outputs a tarball
+- `taco-deploy-mongroup` - updates your mongroup configuration for you and then (re)starts your process
 - `taco-nginx` - updates nginx configuration to route `<package.json name>.*` subdomain traffic to your app, then starts your app process
 
 ## example
@@ -25,6 +25,9 @@ we recommend setting a `start-production` script in your package.json. taco depl
   "scripts": {
     "start": "node server.js",
     "start-production": "taco-nginx node server.js"
+  },
+  "devDependencies": {
+    "taco-nginx": "1.0.0"
   }
 }
 ```
