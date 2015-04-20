@@ -10,7 +10,7 @@ a taco themed modular deployment system for unix
 
 - `taco-pack` - creates tarball of an application
 - `taco-build` - takes a tarball, runs a build script inside it, and outputs a tarball
-- `taco-deploy-mongroup` - updates your mongroup configuration for you and then (re)starts your process
+- `taco-mon` - deploys your app and runs it with the mon process monitor
 - `taco-nginx` - updates nginx configuration to route `<package.json name>.*` subdomain traffic to your app, then starts your app process
 
 ## example
@@ -41,5 +41,21 @@ $ taco-pack . | webcat maxogden
 on server:
 
 ```
-$ webcat maxogden | taco-build "npm install --production" | taco-deploy-mongroup .
+$ webcat maxogden | taco-build "npm install --production" | taco-mon deploy .
+```
+
+## folder structure
+
+taco deployment modules, such as `taco-mon`, should use the following folder structure:
+
+```
+builds/
+  myapp-2015-04-19T22:00:21.243Z/
+deployed/
+  myapp/ -> ../builds/myapp-2015-04-19T22:00:21.243Z/
+pids/
+  myapp.pid
+logs/
+  myapp.stderr.log
+  myapp.stdout.log
 ```
