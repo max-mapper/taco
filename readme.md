@@ -19,12 +19,16 @@ the taco philosophy is:
 
 ### components
 
-each of these is a separate module. you can use them all, or use the ones you like and write your own missing components. if you write a new tool that works well with the taco stack, publish it to npm as `taco-<name>` and send us a pull request adding it to this list.
+each of these is a separate module. you can use them all, or use the ones you like and write your own missing components.
 
-- [`taco-pack`](https://npmjs.org/taco-pack) - creates tarball of an application
+- [`taco-pack`](https://npmjs.org/taco-pack) - creates tarball of a program
 - [`taco-build`](https://npmjs.org/taco-build) - takes a tarball, runs a build script inside it, and outputs a tarball
 - [`taco-mon`](https://npmjs.org/taco-mon) - deploys your program and runs it with the [mon](https://github.com/tj/mon) process monitor
-- [`taco-nginx`](https://npmjs.org/taco-nginx) - updates nginx configuration to route `<package.json name>.*` subdomain traffic to your app, then starts your app process
+- [`taco-nginx`](https://npmjs.org/taco-nginx) - updates nginx configuration to route `<package.json name>.*` subdomain traffic to your program, then starts your programs process
+
+if you write a new tool that works well with the taco stack, publish it to npm as `taco-<name>` and send us a pull request adding it to this list. we also encourage you to [open an issue](https://github.com/maxogden/taco/issues) with your idea first to get feedback from the taco community before implementing.
+
+examples of other tools that could be written are `taco-docker`, `taco-upstart`, or `taco-torrent`. 
 
 ## example
 
@@ -41,7 +45,7 @@ make sure your program has a `package.json` with a `name` and a `start` script.
 }
 ```
 
-then you just pack up your app and pipe the tarball to your server somehow.
+then you just pack up your program and pipe the tarball to your server somehow.
 
 here we are using [webcat](http://npmjs.org/webcat) but you can use ssh, rsync, scp, etc:
 
