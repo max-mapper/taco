@@ -1,11 +1,8 @@
 {
   "name": "taco",
   "version": "2.0.0",
-  "description": "a taco themed modular deployment system for unix",
+  "description": "a modular deployment system for unix",
   "main": "index.js",
-  "scripts": {
-    "test": "DEBUG=taco node test/test.js"
-  },
   "bin": {
     "taco": "cli.js"
   },
