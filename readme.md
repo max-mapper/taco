@@ -23,7 +23,7 @@ each of these is a separate module. you can use them all, or use the ones you li
 
 - [`taco-pack`](https://npmjs.org/taco-pack) - creates tarball of an application
 - [`taco-build`](https://npmjs.org/taco-build) - takes a tarball, runs a build script inside it, and outputs a tarball
-- [`taco-mon`](https://npmjs.org/taco-mon) - deploys your program and runs it with the mon process monitor
+- [`taco-mon`](https://npmjs.org/taco-mon) - deploys your program and runs it with the [mon](https://github.com/tj/mon) process monitor
 - [`taco-nginx`](https://npmjs.org/taco-nginx) - updates nginx configuration to route `<package.json name>.*` subdomain traffic to your app, then starts your app process
 
 ## example
@@ -53,6 +53,38 @@ on server:
 
 ```
 $ webcat maxogden | taco-build "npm install --production" | taco-mon deploy .
+```
+
+here is the full output of deploying [hello-world-server](https://github.com/maxogden/hello-world-server) locally:
+
+```
+~/taco 🐈  taco-pack ~/src/js/hello-world-server > server.tar
+~/taco 🐈  taco-build "npm install --production" < server.tar > server-built.tar
+hat@0.0.3 node_modules/hat
+~/taco 🐈  ls -alh *.tar
+-rw-r--r--  1 maxogden  staff    21K Apr 20 10:37 server-built.tar
+-rw-r--r--  1 maxogden  staff   4.5K Apr 20 10:37 server.tar
+~/taco 🐈  taco-mon deploy . < server-built.tar
+Finished deploying
+~/taco 🐈  taco-mon status
+hello-world-server: alive, started just now
+~/taco 🐈  tree -L 3
+.
+├── deploys
+│   └── hello-world-server -> ../versions/hello-world-server-1429551456725
+├── server-built.tar
+├── server.tar
+└── versions
+    └── hello-world-server-1429551456725
+        ├── index.js
+        ├── node_modules
+        ├── package.json
+        ├── readme.md
+        ├── taco.log
+        ├── taco.mon.pid
+        └── taco.pid
+
+5 directories, 8 files
 ```
 
 ## folder structure
