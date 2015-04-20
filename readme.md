@@ -14,7 +14,7 @@ the taco philosophy is:
 
 - use tarballs to package programs
 - use separate, well defined tools for transforming or deploying tarballs (do one thing well)
-- use unix principles so tools compose nicely (e.g. `taco pack . | taco-build "npm install"` )
+- use unix principles so tools compose nicely (e.g. `taco-pack . | ssh myserver taco-build "npm install"` )
 - make it easy for users to customize their deploy pipelines and implement their own tools
 
 ### components
