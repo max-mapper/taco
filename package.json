@@ -1,6 +1,6 @@
 {
   "name": "taco",
-  "version": "1.6.0",
+  "version": "2.0.0",
   "description": "a taco themed modular deployment system for unix",
   "main": "index.js",
   "scripts": {
@@ -11,10 +11,8 @@
   },
   "author": "max ogden",
   "license": "BSD",
-  "dependencies": {
-  },
-  "devDependencies": {
-  },
+  "dependencies": {},
+  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/maxogden/taco.git"
