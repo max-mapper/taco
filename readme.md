@@ -96,7 +96,7 @@ hello-world-server: alive, started just now
 taco deployment modules, such as `taco-mon`, should use the following folder structure:
 
 ```
-builds/
+versions/
   myapp-1429547612075/
     myapp.pid         # \
     myapp.stderr.log  #  - pids and logs created by taco-mon
