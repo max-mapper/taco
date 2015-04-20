@@ -41,7 +41,9 @@ make sure your program has a `package.json` with a `name` and a `start` script.
 }
 ```
 
-then you just pack up your app and pipe the tarball to your server somehow:
+then you just pack up your app and pipe the tarball to your server somehow.
+
+here we are using [webcat](http://npmjs.org/webcat) but you can use ssh, rsync, scp, etc:
 
 ```
 $ taco-pack . | webcat maxogden
